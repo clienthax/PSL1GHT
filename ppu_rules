@@ -13,6 +13,9 @@ export PORTLIBS		:=	$(PS3DEV)/portlibs/ppu
 export LIBPSL1GHT_INC	:=	-I$(PSL1GHT)/ppu/include -I$(PSL1GHT)/ppu/include/simdmath
 export LIBPSL1GHT_LIB	:=	-L$(PSL1GHT)/ppu/lib
 
+export CFLAGS_INIT 		:=
+export CXXFLAGS_INIT	:=  -D_GLIBCXX11_USE_C99_STDIO
+
 PREFIX			:=	ppu-
 
 MACHDEP			=	-mhard-float -fmodulo-sched -ffunction-sections -fdata-sections
@@ -69,12 +72,23 @@ BUILDDIR		?=	$(CURDIR)/build
 	$(VERB) cp $@ $(basename $@).gnpdrm.pkg
 	$(VERB) $(PACKAGE_FINALIZE) $(basename $@).gnpdrm.pkg
 
+%.info: Makefile
+	$(VERB) echo "Generating $(basename $@).h"
+	$(VERB) mkdir -p $(BUILDDIR)
+	$(VERB) echo "#ifndef __BUILD_INFO_H__" > $(BUILDDIR)/$(basename $@).h
+	$(VERB) echo "#define __BUILD_INFO_H__" >> $(BUILDDIR)/$(basename $@).h
+	$(VERB) echo "" >> $(BUILDDIR)/$(basename $@).h
+	$(VERB) echo "#define SYS_APP_TITLE\t\t\"$(TITLE)\"" >> $(BUILDDIR)/$(basename $@).h
+	$(VERB) echo "#define SYS_APP_ID\t\t\t\"$(APPID)\"" >> $(BUILDDIR)/$(basename $@).h
+	$(VERB) echo "#define SYS_CONTENT_ID\t\t\"$(CONTENTID)\"" >> $(BUILDDIR)/$(basename $@).h
+	$(VERB) echo "" >> $(BUILDDIR)/$(basename $@).h
+	$(VERB) echo "#endif // __BUILD_INFO_H__" >> $(BUILDDIR)/$(basename $@).h
 #---------------------------------------------------------------------------------
 %.vpo: %.vcg
 	$(VERB) echo $(notdir $<)
-	$(VERB) $(CGCOMP) -v $^ $@
+	$(VERB) $(CGCOMP) -v $(CGCFLAGS) $^ $@
 
 %.fpo: %.fcg
 	$(VERB) echo $(notdir $<)
-	$(VERB) $(CGCOMP) -f $^ $@
+	$(VERB) $(CGCOMP) -f $(CGCFLAGS) $^ $@
 

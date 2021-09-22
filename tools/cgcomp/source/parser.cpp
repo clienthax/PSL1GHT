@@ -7,6 +7,11 @@
 
 static paramtype paramtypes[] =
 {
+	{ "bool", PARAM_BOOL },
+	{ "bool1", PARAM_BOOL1 },
+	{ "bool2", PARAM_BOOL2 },
+	{ "bool3", PARAM_BOOL3 },
+	{ "bool4", PARAM_BOOL4 },
 	{ "float", PARAM_FLOAT },
 	{ "float1", PARAM_FLOAT1 },
 	{ "float2", PARAM_FLOAT2 },
@@ -236,7 +241,7 @@ const char* CParser::ParseCond(const char *token,struct nvfx_insn *insn)
 {
 	token = ConvertCond(token,insn);
 	if(token[0]=='.') {
-		s32 k = 0;
+		u32 k = 0;
 		
 		token++;
 
@@ -252,10 +257,11 @@ const char* CParser::ParseCond(const char *token,struct nvfx_insn *insn)
 				insn->cc_swz[k] = NVFX_SWZ_W;
 		}
 		if(k && k<4) {
-			u8 lastswz = insn->cc_swz[k - 1];
-			while(k<4) {
-				insn->cc_swz[k] = lastswz;
-				k++;
+			u32 cnt = k; 
+			u8 lastswz = insn->cc_swz[cnt - 1];
+			while(cnt<4) {
+				insn->cc_swz[cnt] = lastswz;
+				cnt++;
 			}
 		}
 		token += k;

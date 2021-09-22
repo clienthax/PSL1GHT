@@ -5,8 +5,8 @@
 
 #include <mars/callback_types.h>
 
-#define MARS_TASK_BASE_ADDR					0x4000
-#define MARS_TASK_CONTEXT_SAVE_SIZE_MAX		0x3c000
+#define MARS_TASK_BASE_ADDR					0x3a00
+#define MARS_TASK_CONTEXT_SAVE_SIZE_MAX		0x3c600
 #define MARS_TASK_NAME_LEN_MAX				21
 
 #ifdef __cplusplus
@@ -22,10 +22,10 @@ struct mars_task_id {
 
 struct mars_task_args {
 	union {
-		uint8_t  u8[16];
-		uint16_t u16[8];
-		uint32_t u32[4];
-		uint64_t u64[2];
+		uint8_t  u8[32];
+		uint16_t u16[16];
+		uint32_t u32[8];
+		uint64_t u64[4];
 	} type;
 };
 

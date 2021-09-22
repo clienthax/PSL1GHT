@@ -37,6 +37,7 @@ public:
 
 private:
 	void Prepare(CParser *pParser);
+	void RemapHRegs(CParser *pParser);
 
 	void emit_insn(struct nvfx_insn *insn,u8 op);
 	void emit_dst(struct nvfx_insn *insn,bool *have_const);
@@ -60,8 +61,9 @@ private:
 	int grow_insns(int count);
 
 	void reserveReg(const struct nvfx_reg& reg);
-	struct nvfx_reg temp();
+	struct nvfx_reg temp(struct nvfx_insn *insn);
 	void release_temps();
+	bool canUseTempFp16(struct nvfx_insn *insn);
 
 	struct nvfx_reg imm(f32 x, f32 y, f32 z, f32 w);
 
@@ -105,10 +107,14 @@ private:
 	int m_nCurInstruction;
 	struct fragment_program_exec *m_pInstructions;
 
-	int m_rTemps;
-	int m_rTempsDiscard;
+	u64 m_rTemps;
+	u64 m_rTempsDiscard;
 
-	u8 m_HWRegs[NUM_HW_REGS];
+	u64 m_hTemps;
+	u64 m_hTempsDiscard;
+
+	u8 m_RRegs[NUM_HW_REGS];
+	u8 m_HRegs[NUM_HW_REGS];
 
 	std::list<param> m_lParameters;
 	std::list<struct fragment_program_data> m_lConstData;

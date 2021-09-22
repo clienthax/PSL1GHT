@@ -16,10 +16,15 @@ LIBDIRS		:=
 
 UNAME	:=	$(shell uname -s)
 
-CFLAGS	:=	$(DEBUGFLAGS) -Wall -O2
-CFLAGS	+=	$(INCLUDES)
-CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-exceptions
-CGTOOLKIT	:= echo Linux and Mac users should install Cg Toolkit package from NVIDIA web site.
+ifneq ($(strip $(DEBUGFLAGS)),)
+	CFLAGS	:=	$(DEBUGFLAGS) -Wall
+else
+	CFLAGS	:=	-Wall -O2
+endif
+
+CFLAGS		+=	$(INCLUDES)
+CXXFLAGS	:=	$(CFLAGS)
+CGTOOLKIT	:= 	echo Linux and Mac users should install Cg Toolkit package from NVIDIA web site.
 
 LDFLAGS	=	$(DEBUGFLAGS)
 
@@ -29,6 +34,11 @@ ifeq ($(strip $(PS3DEV)),)
   else
     export PS3DEV := $(DEVKITPS3)
   endif
+endif
+
+# Allow for 'make VERBOSE=1' to see the recepie executions
+ifndef VERBOSE
+  VERB := @
 endif
 
 ifneq (,$(findstring MINGW,$(UNAME)))
@@ -50,10 +60,10 @@ endif
 
 ifneq (,$(findstring Darwin,$(UNAME)))
 	SDK		:= $(shell xcrun --show-sdk-path)
-	OSX_MIN		:= $(shell defaults read $(shell xcrun --show-sdk-platform-path)/Info MinimumSDKVersion 2> /dev/null || 10.4)
+	OSX_MIN		:= $(shell defaults read $(shell xcrun --show-sdk-platform-path 2> /dev/null)/Info MinimumSDKVersion 2> /dev/null || xcrun --show-sdk-version 2> /dev/null || echo 10.4)
 	OSXCFLAGS	:= -mmacosx-version-min=$(OSX_MIN)
-	OSXCXXFLAGS	:=	$(OSXCFLAGS)
-	CXXFLAGS	+=	-fvisibility=hidden
+	OSXCXXFLAGS	:= $(OSXCFLAGS)
+	CXXFLAGS	+= -fvisibility=hidden
 	LDFLAGS += -mmacosx-version-min=$(OSX_MIN) -Wl,-syslibroot,$(SDK)
 endif
 
@@ -61,6 +71,8 @@ ifneq (,$(findstring Linux,$(UNAME)))
 	LDFLAGS += -ldl -lpthread
 	OS := Linux
 endif
+
+CXXFLAGS        += -std=c++11
 
 LIBS		:=
 
@@ -132,8 +144,8 @@ DEPENDS	:=	$(OFILES:.o=.d)
 # main targets
 #---------------------------------------------------------------------------------
 $(OUTPUT): $(DFILES) $(OFILES)
-	@echo linking ... $(notdir $@)
-	@$(LD) $^ $(LDFLAGS) $(LIBPATHS) $(LIBS) -o $@
+	$(VERB) echo linking ... $(notdir $@)
+	$(VERB) $(LD) $^ $(LDFLAGS) $(LIBPATHS) $(LIBS) -o $@
 
 #---------------------------------------------------------------------------------
 # Compile Targets for C/C++
@@ -141,15 +153,15 @@ $(OUTPUT): $(DFILES) $(OFILES)
 
 #---------------------------------------------------------------------------------
 %.o : %.cpp
-	@echo $(notdir $<)
-	@$(CXX) -E -MMD $(CXXFLAGS) $< > /dev/null
-	@$(CXX) $(OSXCXXFLAGS) $(CXXFLAGS) -o $@ -c $<
+	$(VERB) echo $(notdir $<)
+	$(VERB) $(CXX) -E -MMD $(CXXFLAGS) $< > /dev/null
+	$(VERB) $(CXX) $(OSXCXXFLAGS) $(CXXFLAGS) -o $@ -c $<
 
 #---------------------------------------------------------------------------------
 %.o : %.c
-	@echo $(notdir $<)
-	@$(CC) -E -MMD $(CFLAGS) $< > /dev/null
-	@$(CC) $(OSXCFLAGS) $(CFLAGS) -o $@ -c $<
+	$(VERB) echo $(notdir $<)
+	$(VERB) $(CC) -E -MMD $(CFLAGS) $< > /dev/null
+	$(VERB) $(CC) $(OSXCFLAGS) $(CFLAGS) -o $@ -c $<
 
 
 

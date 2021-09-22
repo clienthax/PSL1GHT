@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <float.h>
+#include <math.h>
 
 #ifdef WIN32
 #include <memory.h>
@@ -73,6 +74,10 @@ typedef double						f64;
 #elif defined(__GNUC__)
 #define stricmp strcasecmp
 #define strnicmp strncasecmp
+#endif
+
+#ifdef __CYGWIN__
+#include <strings.h>
 #endif
 
 typedef struct rsx_vp

@@ -329,6 +329,10 @@
 /*! \brief remap component to specified component */
 #define GCM_TEXTURE_REMAP_TYPE_REMAP				2
 
+/*! \brief map the two input elements XY to XYZW as XYXY */
+#define GCM_TEXTURE_REMAP_ORDER_XYXY				0
+/*! \brief map the two input elements XY to XYZW as XXXY */
+#define GCM_TEXTURE_REMAP_ORDER_XXXY				1
 /*! \brief remap component to alpha component */
 #define GCM_TEXTURE_REMAP_COLOR_A					0
 /*! \brief remap component to red component */
@@ -383,8 +387,8 @@
 #define GCM_TEXTURE_LINEAR_MIPMAP_NEAREST			4
 #define GCM_TEXTURE_NEAREST_MIPMAP_LINEAR			5
 #define GCM_TEXTURE_LINEAR_MIPMAP_LINEAR			6
-#define GCM_TEXTURE_CONVOLUTUIN_MIN					7
-#define GCM_TEXTURE_CONVOLUTUIN_MAG					4
+#define GCM_TEXTURE_CONVOLUTION_MIN					7
+#define GCM_TEXTURE_CONVOLUTION_MAG					4
 
 #define GCM_TEXTURE_CONVOLUTION_QUINCUNX			1
 #define GCM_TEXTURE_CONVOLUTION_GAUSSIAN			2
@@ -421,6 +425,9 @@
 
 #define GCM_TEXTURE_ANISO_LOW						0
 #define GCM_TEXTURE_ANISO_HIGH						1
+
+#define GCM_DEPTH_FORMAT_FIXED						0
+#define GCM_DEPTH_FORMAT_FLOAT						1
 
 #define GCM_TEXTURE_CYLINDRICAL_WRAP_ENABLE_TEX0_U	(1<<0)
 #define GCM_TEXTURE_CYLINDRICAL_WRAP_ENABLE_TEX0_V	(1<<1)
@@ -693,6 +700,13 @@
 #define GCM_VERTEX_TEXTURE_CACHE_LINE_SIZE			32
 #define GCM_L2_TEXTURE_CACHE_LOCAL_LINE_SIZE		64
 #define GCM_L2_TEXTURE_CACHE_MAIN_LINE_SIZE			128
+
+#define GCM_TEXTURE_REMAP_MODE(order, inputA, inputR, inputG, inputB, outputA, outputR, outputG, outputB) \
+	(((order) << 16) | \
+	 ((inputA) << GCM_TEXTURE_REMAP_COLOR_A_SHIFT) | ((inputR) << GCM_TEXTURE_REMAP_COLOR_R_SHIFT) | \
+	 ((inputG) << GCM_TEXTURE_REMAP_COLOR_G_SHIFT) | ((inputB) << GCM_TEXTURE_REMAP_COLOR_B_SHIFT) | \
+	 ((outputA) << GCM_TEXTURE_REMAP_TYPE_A_SHIFT) | ((outputR) << GCM_TEXTURE_REMAP_TYPE_R_SHIFT) | \
+	 ((outputG) << GCM_TEXTURE_REMAP_TYPE_G_SHIFT) | ((outputB) << GCM_TEXTURE_REMAP_TYPE_B_SHIFT))
 
 #ifdef __cplusplus
 extern "C" {

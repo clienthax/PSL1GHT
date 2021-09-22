@@ -65,7 +65,7 @@ struct _opcode
    { "FLR", OPCODE_FLR, INPUT_1V, OUTPUT_V, _R | _H | _X | _C | _S },
    { "FRC", OPCODE_FRC, INPUT_1V, OUTPUT_V, _R | _H | _X | _C | _S },
    { "IF", OPCODE_IF, INPUT_CC, OUTPUT_NONE, 0                     },
-   { "KIL", OPCODE_KIL_NV, INPUT_CC, OUTPUT_NONE, 0                },
+   { "KIL", OPCODE_KIL, INPUT_CC, OUTPUT_NONE, 0                },
    { "LG2", OPCODE_LG2, INPUT_1S, OUTPUT_S, _R | _H |      _C | _S },
    { "LIT", OPCODE_LIT, INPUT_1V, OUTPUT_V, _R | _H |      _C | _S },
    { "LOOP", OPCODE_BGNLOOP, INPUT_1V, OUTPUT_NONE, 0			   },
@@ -102,7 +102,7 @@ struct _opcode
    { "TXB", OPCODE_TXB, INPUT_1V_T, OUTPUT_V,              _C | _S },
    { "TXD", OPCODE_TXD, INPUT_3V_T, OUTPUT_V,              _C | _S },
    { "TXL", OPCODE_TXL, INPUT_1V_T, OUTPUT_V,              _C | _S },
-   { "TXP", OPCODE_TXP_NV, INPUT_1V_T, OUTPUT_V,           _C | _S },
+   { "TXP", OPCODE_TXP, INPUT_1V_T, OUTPUT_V,           _C | _S },
    { "UP2H",  OPCODE_UP2H,  INPUT_1S, OUTPUT_V,            _C | _S },
    { "UP2US", OPCODE_UP2US, INPUT_1S, OUTPUT_V,            _C | _S },
    { "UP4B",  OPCODE_UP4B,  INPUT_1S, OUTPUT_V,            _C | _S },
@@ -259,7 +259,6 @@ void CFPParser::ParseInstruction(struct nvfx_insn *insn,opcode *opc,const char *
 	insn->precision = opc->suffixes&(_R|_H|_X);
 	insn->sat = ((opc->suffixes&_S) ? TRUE : FALSE);
 	insn->cc_update = ((opc->suffixes&_C) ? TRUE : FALSE);
-	insn->disable_pc = IsPCDisablingInstruction(insn);
 
 	if(opc->outputs==OUTPUT_S || opc->outputs==OUTPUT_V) {
 		ParseMaskedDstReg(token,insn);
@@ -316,8 +315,13 @@ void CFPParser::ParseInstruction(struct nvfx_insn *insn,opcode *opc,const char *
 		token = SkipSpaces(strtok(NULL,","));
 		ParseTextureTarget(token,&insn->tex_target);
 	} else if(opc->inputs==INPUT_CC) {
+		if (*token == '(') token++;
 		ParseCond(token,insn);
 	}
+
+	// finally check for insns disabling perspective correction interpolation
+	// only at this point we know everyhting about the insn to decide.
+	insn->disable_pc = IsPCDisablingInstruction(insn);
 }
 
 opcode CFPParser::FindOpcode(const char *mnemonic)
@@ -489,7 +493,12 @@ const char* CFPParser::ParseOutputRegAlias(const char *token,s32 *reg,u8 *is_fp1
 	*is_fp16 = 0;
 
 	for(;it!=m_lOParameters.end();it++) {
-		if(strncmp(token,it->alias.c_str(),it->alias.size())==0) {
+		size_t len = 0;
+		size_t tlen = strlen(token);
+
+		// cut off the dst mask for comparison
+		for (u32 i=0;i < tlen && token[i] != '.';i++, len++) ;
+		if(strncmp(token, it->alias.c_str(), len) == 0) {
 			*reg = it->index;
 			*is_fp16 = it->is_fp16;
 			return (token + it->alias.size());

@@ -183,6 +183,14 @@ public:
     // 
     inline const Vector3 operator /( floatInVec scalar ) const;
 
+    // Multiply a 3-D vector by a 3-D vector
+    // 
+    inline const Vector3 operator *( Vector3 vec ) const;
+
+    // Divide a 3-D vector by a 3-D vector
+    // 
+    inline const Vector3 operator /( Vector3 vec ) const;
+
     // Perform compound assignment and addition with a 3-D vector
     // 
     inline Vector3 & operator +=( Vector3 vec );
@@ -207,6 +215,14 @@ public:
     // 
     inline Vector3 & operator /=( floatInVec scalar );
 
+    // Perform compound assignment and multiplication by a 3-D vector
+    // 
+    inline Vector3 & operator *=( Vector3 vec );
+
+    // Perform compound assignment and division by a 3-D vector
+    // 
+    inline Vector3 & operator /=( Vector3 vec );
+
     // Negate all elements of a 3-D vector
     // 
     inline const Vector3 operator -( ) const;
@@ -218,22 +234,6 @@ public:
 	// Perform equality comparsion of two 3-D vector
 	//
 	inline bool operator != (const Vector3& vec) const;
-	
-	// Perform lower than comparsion of two 3-D vector
-	//
-	inline bool operator < (const Vector3& vec) const;
-	
-	// Perform lower or equal comparsion of two 3-D vector
-	//
-	inline bool operator <= (const Vector3& vec) const;
-	
-	// Perform greater than comparsion of two 3-D vector
-	//
-	inline bool operator > (const Vector3& vec) const;
-	
-	// Perform greater or equal comparsion of two 3-D vector
-	//
-	inline bool operator >= (const Vector3& vec) const;
 	
     // Construct x axis
     // 
@@ -604,6 +604,14 @@ public:
     // 
     inline const Vector4 operator /( floatInVec scalar ) const;
 
+    // Multiply a 4-D vector by a 4-D vector
+    // 
+    inline const Vector4 operator *( Vector4 vec ) const;
+
+    // Divide a 4-D vector by a 4-D vector
+    // 
+    inline const Vector4 operator /( Vector4 vec ) const;
+
     // Perform compound assignment and addition with a 4-D vector
     // 
     inline Vector4 & operator +=( Vector4 vec );
@@ -628,6 +636,14 @@ public:
     // 
     inline Vector4 & operator /=( floatInVec scalar );
 
+    // Perform compound assignment and multiplication by a 4-D vector
+    // 
+    inline Vector4 & operator *=( Vector4 vec );
+
+    // Perform compound assignment and division by a 4-D vector
+    // 
+    inline Vector4 & operator /=( Vector4 vec );
+
     // Negate all elements of a 4-D vector
     // 
     inline const Vector4 operator -( ) const;
@@ -639,22 +655,6 @@ public:
 	// Perform equality comparsion of two 4-D vector
 	//
 	inline bool operator != (const Vector4& vec) const;
-	
-	// Perform lower than comparsion of two 4-D vector
-	//
-	inline bool operator < (const Vector4& vec) const;
-	
-	// Perform lower or equal comparsion of two 4-D vector
-	//
-	inline bool operator <= (const Vector4& vec) const;
-	
-	// Perform greater than comparsion of two 4-D vector
-	//
-	inline bool operator > (const Vector4& vec) const;
-	
-	// Perform greater or equal comparsion of two 4-D vector
-	//
-	inline bool operator >= (const Vector4& vec) const;
 	
     // Construct x axis
     // 
@@ -956,22 +956,6 @@ public:
 	// Perform equality comparsion of two 3-D point
 	//
 	inline bool operator != (const Point3& vec) const;
-	
-	// Perform lower than comparsion of two 3-D point
-	//
-	inline bool operator < (const Point3& vec) const;
-	
-	// Perform lower or equal comparsion of two 3-D point
-	//
-	inline bool operator <= (const Point3& vec) const;
-	
-	// Perform greater than comparsion of two 3-D point
-	//
-	inline bool operator > (const Point3& vec) const;
-	
-	// Perform greater or equal comparsion of two 3-D point
-	//
-	inline bool operator >= (const Point3& vec) const;
 };
 
 // Multiply two 3-D points per element

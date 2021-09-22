@@ -15,6 +15,7 @@
 CCompilerFP::CCompilerFP()
 {
 	m_rTemps = 0;
+	m_hTemps = 0;
 	m_nNumRegs = 2;
 	m_nSamplers = 0;
 	m_nFPControl = 0;
@@ -23,6 +24,7 @@ CCompilerFP::CCompilerFP()
 	m_nTexcoord3D = 0;
 	m_nInstructions = 0;
 	m_rTempsDiscard = 0;
+	m_hTempsDiscard = 0;
 	m_nCurInstruction = 0;
 	m_pInstructions = NULL;
 }
@@ -36,7 +38,8 @@ void CCompilerFP::Prepare(CParser *pParser)
 	int i,j,nCount = pParser->GetInstructionCount();
 	struct nvfx_insn *insns = pParser->GetInstructions();
 
-	memset(m_HWRegs, 0, NUM_HW_REGS);
+	memset(m_RRegs, 0, NUM_HW_REGS);
+	memset(m_HRegs, 0, NUM_HW_REGS);
 	m_lParameters = pParser->GetParameters();
 
 	for(i=0;i<nCount;i++) {
@@ -55,8 +58,79 @@ void CCompilerFP::Prepare(CParser *pParser)
 		}
 
 		switch(insn->dst.type) {
+			case NVFXSR_OUTPUT:
+				reserveReg(insn->dst);
+				break;
 			case NVFXSR_TEMP:
 				reserveReg(insn->dst);
+				break;
+		}
+	}
+
+	RemapHRegs(pParser);
+}
+
+void CCompilerFP::RemapHRegs(CParser *pParser)
+{
+	u32 nCount = pParser->GetInstructionCount();
+	struct nvfx_insn *insns = pParser->GetInstructions();
+	u32 usedHRegs[NUM_HW_REGS];
+	s32 mappedHRegs[NUM_HW_REGS];
+
+	memset(usedHRegs, 0, sizeof(u32)*NUM_HW_REGS);
+	memset(mappedHRegs, -1, sizeof(s32)*NUM_HW_REGS);
+
+	// set used for all R-regs
+	for (u32 i=0;i < NUM_HW_REGS/2;i++) {
+		if (m_RRegs[i]) {
+			usedHRegs[(i*2) + 0] = 1;
+			usedHRegs[(i*2) + 1] = 1;
+		}
+	}
+
+	// set used for all H-regs
+	for (u32 i=0;i < NUM_HW_REGS;i++) {
+		if (m_HRegs[i] && !m_RRegs[i>>1]) {
+			mappedHRegs[i] = i;
+			usedHRegs[i] = 1;
+		}
+	}
+
+	// create remapping map
+	for (u32 i=0, j=0, k=0;i < NUM_HW_REGS;i++) {
+		if (!usedHRegs[i] && mappedHRegs[i] == -1 && mappedHRegs[j] == -1)
+			mappedHRegs[j++] = k++;
+		else if (mappedHRegs[j] == -1)
+			k++;
+		if (mappedHRegs[j] != -1)
+			j++;
+	}
+
+	// now remap H-regs
+	for(u32 i=0;i<nCount;i++) {
+		struct nvfx_insn *insn = &insns[i];
+
+		for(u32 j=0;j<3;j++) {
+			struct nvfx_src *src = &insn->src[j];
+
+			switch(src->reg.type) {
+				case NVFXSR_INPUT:
+					break;
+				case NVFXSR_TEMP:
+					if (src->reg.is_fp16) {
+						src->reg.index = mappedHRegs[src->reg.index];
+						reserveReg(src->reg);
+					}
+					break;
+			}
+		}
+
+		switch(insn->dst.type) {
+			case NVFXSR_TEMP:
+				if (insn->dst.is_fp16) {
+					insn->dst.index = mappedHRegs[insn->dst.index];
+					reserveReg(insn->dst);
+				}
 				break;
 		}
 	}
@@ -109,7 +183,7 @@ void CCompilerFP::Compile(CParser *pParser)
 			case OPCODE_FRC:
 				emit_insn(insn,NVFX_FP_OP_OPCODE_FRC);
 				break;
-			case OPCODE_KIL_NV:
+			case OPCODE_KIL:
 				emit_insn(insn,NVFX_FP_OP_OPCODE_KIL);
 				break;
 			case OPCODE_LG2:
@@ -139,8 +213,17 @@ void CCompilerFP::Compile(CParser *pParser)
 			case OPCODE_NRM3:
 				emit_insn(insn,NVFX_FP_OP_OPCODE_NRM);
 				break;
+			case OPCODE_PK4B:
+				emit_insn(insn,NVFX_FP_OP_OPCODE_PK4B);
+				break;
+			case OPCODE_PK4UB:
+				emit_insn(insn,NVFX_FP_OP_OPCODE_PK4UB);
+				break;
 			case OPCODE_PK2H:
 				emit_insn(insn,NVFX_FP_OP_OPCODE_PK2H);
+				break;
+			case OPCODE_PK2US:
+				emit_insn(insn,NVFX_FP_OP_OPCODE_PK2US);
 				break;
 			case OPCODE_POW:
 				emit_pow(insn);
@@ -187,8 +270,17 @@ void CCompilerFP::Compile(CParser *pParser)
 			case OPCODE_TXP:
 				emit_tex(insn,NVFX_FP_OP_OPCODE_TXP);
 				break;
+			case OPCODE_UP4B:
+				emit_insn(insn,NVFX_FP_OP_OPCODE_UP4B);
+				break;
 			case OPCODE_UP4UB:
 				emit_insn(insn,NVFX_FP_OP_OPCODE_UP4UB);
+				break;
+			case OPCODE_UP2H:
+				emit_insn(insn,NVFX_FP_OP_OPCODE_UP2H);
+				break;
+			case OPCODE_UP2US:
+				emit_insn(insn,NVFX_FP_OP_OPCODE_UP2US);
 				break;
 			case OPCODE_BGNLOOP:
 				emit_loop(insn);
@@ -367,7 +459,7 @@ void CCompilerFP::emit_src(struct nvfx_insn *insn,s32 pos,bool *have_const)
 		sr |= NVFX_FP_REG_NEGATE;
 
 	if(src->abs)
-		hw[1] |= src_abs_flag(pos);
+		sr |= src_abs_flag(pos);
 
 	sr |= ((src->swz[0] << NVFX_FP_REG_SWZ_X_SHIFT) |
 	       (src->swz[1] << NVFX_FP_REG_SWZ_Y_SHIFT) |
@@ -536,7 +628,7 @@ void CCompilerFP::emit_loop(struct nvfx_insn *insn)
 void CCompilerFP::emit_lrp(struct nvfx_insn *insn)
 {
 	struct nvfx_insn tmp_insn;
-	struct nvfx_src tmp = nvfx_src(temp());
+	struct nvfx_src tmp = nvfx_src(temp(insn));
 
 	tmp_insn = arith(0,tmp.reg,insn->mask,neg(insn->src[0]),insn->src[2],insn->src[2]);
 	emit_insn(&tmp_insn,NVFX_FP_OP_OPCODE_MAD);
@@ -548,23 +640,23 @@ void CCompilerFP::emit_lrp(struct nvfx_insn *insn)
 void CCompilerFP::emit_pow(struct nvfx_insn *insn)
 {
 	struct nvfx_insn tmp_insn;
-	struct nvfx_src src = nvfx_src(insn->dst);
+	struct nvfx_src tmp = nvfx_src(temp(insn));
 	struct nvfx_src none = nvfx_src(nvfx_reg(NVFXSR_NONE,0));
 
-	tmp_insn = arith(0,insn->dst, NVFX_FP_MASK_X, insn->src[0], none, none);
-	emit_insn(&tmp_insn,NVFX_FP_OP_OPCODE_LG2);
+	tmp_insn = arith(0, tmp.reg, NVFX_FP_MASK_X, insn->src[0], none, none);
+	emit_insn(&tmp_insn, NVFX_FP_OP_OPCODE_LG2);
 
-	tmp_insn = arith(0,insn->dst, NVFX_FP_MASK_X, swz(src, X, X, X, X),insn->src[1], none);
-	emit_insn(&tmp_insn,NVFX_FP_OP_OPCODE_MUL);
+	tmp_insn = arith(0, tmp.reg, NVFX_FP_MASK_X, swz(tmp, X, X, X, X), insn->src[1], none);
+	emit_insn(&tmp_insn, NVFX_FP_OP_OPCODE_MUL);
 
-	tmp_insn = arith_ctor(insn,insn->dst,swz(src, X, X, X, X), none, none);
-	emit_insn(&tmp_insn,NVFX_FP_OP_OPCODE_EX2);
+	tmp_insn = arith_ctor(insn, insn->dst, swz(tmp, X, X, X, X), none, none);
+	emit_insn(&tmp_insn, NVFX_FP_OP_OPCODE_EX2);
 }
 
 void CCompilerFP::emit_lit(struct nvfx_insn *insn)
 {
 	struct nvfx_insn tmp_insn;
-	struct nvfx_src tmp = nvfx_src(temp());
+	struct nvfx_src tmp = nvfx_src(temp(insn));
 	struct nvfx_src none = nvfx_src(nvfx_reg(NVFXSR_NONE,0));
 	struct nvfx_src maxs = nvfx_src(imm(0.0f, FLT_MIN, 0.0f, 0.0f));
 
@@ -583,11 +675,11 @@ void CCompilerFP::emit_lit(struct nvfx_insn *insn)
 
 void CCompilerFP::emit_ddx(struct nvfx_insn *insn)
 {
-	struct nvfx_insn tmp_insn;
-	struct nvfx_src tmp = nvfx_src(temp());
-	struct nvfx_src none = nvfx_src(nvfx_reg(NVFXSR_NONE,0));
-
 	if(insn->mask&(NVFX_FP_MASK_Z | NVFX_FP_MASK_W)) {
+		struct nvfx_insn tmp_insn;
+		struct nvfx_src tmp = nvfx_src(temp(insn));
+		struct nvfx_src none = nvfx_src(nvfx_reg(NVFXSR_NONE,0));
+
 		tmp_insn = arith(insn->sat, tmp.reg, (NVFX_FP_MASK_X | NVFX_FP_MASK_Y), swz(insn->src[0], Z, W, Z, W), none, none);
 		emit_insn(&tmp_insn,NVFX_FP_OP_OPCODE_DDX);
 
@@ -605,11 +697,11 @@ void CCompilerFP::emit_ddx(struct nvfx_insn *insn)
 
 void CCompilerFP::emit_ddy(struct nvfx_insn *insn)
 {
-	struct nvfx_insn tmp_insn;
-	struct nvfx_src tmp = nvfx_src(temp());
-	struct nvfx_src none = nvfx_src(nvfx_reg(NVFXSR_NONE,0));
-
 	if(insn->mask&(NVFX_FP_MASK_Z | NVFX_FP_MASK_W)) {
+		struct nvfx_insn tmp_insn;
+		struct nvfx_src tmp = nvfx_src(temp(insn));
+		struct nvfx_src none = nvfx_src(nvfx_reg(NVFXSR_NONE,0));
+
 		tmp_insn = arith(insn->sat, tmp.reg, (NVFX_FP_MASK_X | NVFX_FP_MASK_Y), swz(insn->src[0], Z, W, Z, W), none, none);
 		emit_insn(&tmp_insn,NVFX_FP_OP_OPCODE_DDY);
 
@@ -678,26 +770,67 @@ struct nvfx_reg CCompilerFP::imm(f32 x, f32 y, f32 z, f32 w)
 void CCompilerFP::reserveReg(const struct nvfx_reg& reg)
 {
 	u32 index = reg.is_fp16 ? (reg.index >> 1) : reg.index;
-	m_HWRegs[index] |= reg.is_fp16 ? (1 << (reg.index&0x01)) : 0x03;
+	if (reg.is_fp16) {
+		m_HRegs[reg.index] = 1;
+		m_hTemps |= (1 << reg.index);
+	} else {
+		m_RRegs[reg.index] = 1;
+		m_hTemps |= (3 << (reg.index<<1));
+	}
 	m_rTemps |= (1 << index);
 }
 
-struct nvfx_reg CCompilerFP::temp()
+struct nvfx_reg CCompilerFP::temp(struct nvfx_insn *insn)
 {
-	s32 idx = __builtin_ctzll(~m_rTemps);
+	s32 reg = 0, idx = -1;
+	bool useFp16 = canUseTempFp16(insn);
 
-	if(idx<0) return nvfx_reg(NVFXSR_TEMP,0);
+	if (useFp16) {
+		reg = idx = __builtin_ctzll(~m_hTemps);
+		if (idx < 0)
+			throw std::runtime_error("Error: No temprary register left to allocate.");
+
+		reg = idx;
+		m_hTemps |= (1 << idx);
+		m_hTempsDiscard |= (1 << idx);
+		idx >>= 1;
+	} else {
+		idx = __builtin_ctzll(~m_rTemps);
+		if (idx < 0)
+			throw std::runtime_error("Error: No temprary register left to allocate.");
+
+		reg = idx;
+		m_hTemps |= (3 << (idx << 1));
+		m_hTempsDiscard |= (3 << (idx << 1));
+	}
 
 	m_rTemps |= (1<<idx);
 	m_rTempsDiscard |= (1<<idx);
 
-	return nvfx_reg(NVFXSR_TEMP,idx);
+	return nvfx_reg(NVFXSR_TEMP, reg);
 }
 
 void CCompilerFP::release_temps()
 {
 	m_rTemps &= ~m_rTempsDiscard;
 	m_rTempsDiscard = 0;
+
+	m_hTemps &= ~m_hTempsDiscard;
+	m_hTempsDiscard = 0;
+}
+
+bool CCompilerFP::canUseTempFp16(struct nvfx_insn *insn)
+{	
+	u8 useFp16 = 1;
+
+	useFp16 &= (insn->dst.is_fp16 && insn->dst.type == NVFXSR_TEMP);
+	for (u32 i=0; i < 3;i++) {
+		const struct nvfx_reg& reg = insn->src[i].reg;
+		if (reg.type == NVFXSR_TEMP)
+			useFp16 &= reg.is_fp16;
+	}
+
+	return (bool)useFp16;
 }
 
 int CCompilerFP::grow_insns(int count)
