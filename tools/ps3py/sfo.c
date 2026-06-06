@@ -630,7 +630,7 @@ static void usage(void)
 
 static void version(void)
 {
-    puts("sfo.py 0.2");
+    puts("sfo 0.2");
 }
 
 /* ------------------------------------------------------------------ */

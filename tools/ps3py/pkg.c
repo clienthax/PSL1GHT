@@ -1108,7 +1108,7 @@ static void usage(void)
 
 static void version(void)
 {
-    puts("pky.py 0.5");
+    puts("pkg 0.5");
 }
 
 /* ------------------------------------------------------------------ */
