@@ -290,17 +290,17 @@ static void list_sfo(const char *file, int debug, int pretty)
                 printf("[X] Value Length: %08x\n", kvs[i].value_len);
                 printf("[X] Padded Length: %08x\n", kvs[i].padded_len);
                 if (kvs[i].type == SFO_STRING) {
-                    printf("[X] Value Offset: %08x[X] Value: '%s'[%08x]\n\n",
+                    printf("[X] Value Offset: %08x\n[X] Value: '%s'[%08x]\n\n",
                            kvs[i].value_off,
                            kvs[i].str_val,
                            value_offset + kvs[i].value_off);
                 } else if (kvs[i].type == SFO_INT) {
-                    printf("[X] Value Offset: %08x[X] Value: %u[%08x]\n\n",
+                    printf("[X] Value Offset: %08x\n[X] Value: %u[%08x]\n\n",
                            kvs[i].value_off,
                            kvs[i].int_val,
                            value_offset + kvs[i].value_off);
                 } else {
-                    printf("[X] Value Offset: %08x[X] Value Type Unknown\n\n",
+                    printf("[X] Value Offset: %08x\n[X] Value Type Unknown\n\n",
                            kvs[i].value_off);
                 }
             }
@@ -625,7 +625,17 @@ cleanup:
 /* ------------------------------------------------------------------ */
 static void usage(void)
 {
-    puts("usage:\n    sfo");
+    puts("usage:");
+    puts("    sfo [options]\n");
+    puts("     -h / --help");
+    puts("     -v / --version");
+    puts("     -d / --debug");
+    puts("     -p / --pretty");
+    puts("     -l / --list <sfofile>");
+    puts("     -t / --toxml   <sfofile> <xmlfile>");
+    puts("     -f / --fromxml <xmlfile> <sfofile>");
+    puts("     --title=<title>  (override TITLE when using --fromxml)");
+    puts("     --appid=<appid>  (override TITLE_ID when using --fromxml)\n");
 }
 
 static void version(void)
