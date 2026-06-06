@@ -19,6 +19,8 @@
 #include <ctype.h>
 #include <getopt.h>
 
+#define PS3SFO_APP_VERSION "0.3"
+
 /* ------------------------------------------------------------------ */
 /* SFO constants                                                        */
 /* ------------------------------------------------------------------ */
@@ -625,22 +627,23 @@ cleanup:
 /* ------------------------------------------------------------------ */
 static void usage(void)
 {
+    puts("sfo v" PS3SFO_APP_VERSION " - A tool to manage PlayStation 3 SFO files.\n");
     puts("usage:");
     puts("    sfo [options]\n");
-    puts("     -h / --help");
-    puts("     -v / --version");
-    puts("     -d / --debug");
-    puts("     -p / --pretty");
-    puts("     -l / --list <sfofile>");
-    puts("     -t / --toxml   <sfofile> <xmlfile>");
-    puts("     -f / --fromxml <xmlfile> <sfofile>");
-    puts("     --title=<title>  (override TITLE when using --fromxml)");
-    puts("     --appid=<appid>  (override TITLE_ID when using --fromxml)\n");
+    puts("     -h / --help \t\t\t\t display this help and exit.");
+    puts("     -v / --version \t\t\t\t output version information and exit.");
+    puts("     -d / --debug \t\t\t\t display extra information such as header and table data.");
+    puts("     -p / --pretty \t\t\t\t when used with -l and -d, display the key name and value.");
+    puts("     -l / --list <sfofile> \t\t\t list the contents of the provided SFO file.");
+    puts("     -t / --toxml   <sfofile> <xmlfile>  convert a SFO file to an XML file.");
+    puts("     -f / --fromxml <xmlfile> <sfofile>  convert an XML file to a SFO file.");
+    puts("       --title=<title> \t\t\t\t (override TITLE when using --fromxml)");
+    puts("       --appid=<appid> \t\t\t\t (override TITLE_ID when using --fromxml)\n");
 }
 
 static void version(void)
 {
-    puts("sfo 0.2");
+    puts("sfo " PS3SFO_APP_VERSION);
 }
 
 /* ------------------------------------------------------------------ */
