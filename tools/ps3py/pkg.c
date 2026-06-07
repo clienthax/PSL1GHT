@@ -17,6 +17,8 @@
 #include <getopt.h>
 #include <errno.h>
 
+#define PS3PKG_APP_VERSION "0.6"
+
 #ifdef _WIN32
 # include <windows.h>
 # include <direct.h>
@@ -649,6 +651,27 @@ static void unpack_pkg(const char *filename)
 
     if (g_debug) {
         /* Print header (same as list_pkg header section) */
+        uint32_t magic       = rd_be32(data);
+        uint32_t type        = rd_be32(data + 4);
+        uint32_t pkg_info_off = rd_be32(data + 8);
+        uint32_t unk1        = rd_be32(data + 12);
+        uint32_t head_size   = rd_be32(data + 16);
+        uint32_t item_count  = rd_be32(data + 20);
+        uint64_t package_size = rd_be64(data + 24);
+        uint64_t data_off    = rd_be64(data + 32);
+        uint64_t data_size   = rd_be64(data + 40);
+        const uint8_t *content_id = data + 48;          /* 0x30 bytes */
+
+        printf("[X] Magic: %08x\n", magic);
+        printf("[X] Type: %08x\n", type);
+        printf("[X] Offset to package info: %08x\n", pkg_info_off);
+        printf("[ ] unk1: %08x\n", unk1);
+        printf("[X] Head Size: %08x\n", head_size);
+        printf("[X] Item Count: %08x\n", item_count);
+        printf("[X] Package Size: %016llx\n", (unsigned long long)package_size);
+        printf("[X] Data Offset: %016llx\n", (unsigned long long)data_off);
+        printf("[X] Data Size: %016llx\n", (unsigned long long)data_size);
+        printf("[X] ContentID: '%.48s'\n\n", content_id);
     }
 
     /* Create output directory from content ID */
@@ -713,6 +736,12 @@ static void unpack_pkg(const char *filename)
                    (flags & 0xFF) == TYPE_RAW         ? "Raw Data"   : "Unknown",
                    (flags & TYPE_OVERWRITE_ALLOWED) ? " " : " NOT",
                    (flags & TYPE_OVERWRITE_ALLOWED) ? "allowed." : "allowed.");
+
+            printf("[X] File Name offset: %08x\n", fn_off);
+            printf("[X] File Name Length: %08x\n", fn_len);
+            printf("[X] Offset To File Data: %016llx\n", (unsigned long long)foff);
+            printf("[X] File Size: %016llx\n", (unsigned long long)fsize);
+            printf("[X] Flags: %08x\n\n", flags);
         }
     }
 
@@ -1093,22 +1122,25 @@ static void pack_pkg(const char *folder, const char *contentid,
 /* ------------------------------------------------------------------ */
 static void usage(void)
 {
-    puts("usage: [based on revision 1061]\n"
+    puts("pkg v" PS3PKG_APP_VERSION " - PS3 PKG file utility\n");
+    puts("usage:\n"
          "\n"
-         "    pkg target-directory [out-file]\n"
+         "    pkg --contentid=<content-id> target-directory [out-file]\n"
          "\n"
          "    pkg [options] npdrm-package\n"
          "        -l | --list             list packaged files.\n"
          "        -x | --extract          extract package.\n"
+         "        -d | --debug            print debug info.\n"
          "\n"
          "    pkg [options]\n"
-         "        --version               print revision.\n"
-         "        --help                  print this message.");
+         "        -c | --contentid        content ID for packing.\n"
+         "        -v | --version          print revision.\n"
+         "        -h | --help             print this message.");
 }
 
 static void version(void)
 {
-    puts("pkg 0.5");
+    puts("pkg " PS3PKG_APP_VERSION);
 }
 
 /* ------------------------------------------------------------------ */
